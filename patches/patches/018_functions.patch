@@ -1,4 +1,0 @@
-31c31
-< ??? deepThought() ??? {
----
-> fn deepThought() u8 {
