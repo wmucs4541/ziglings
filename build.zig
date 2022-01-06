@@ -540,17 +540,15 @@ pub fn build(b: *Builder) void {
 
     var prev_chain_verify = verify_all;
 
-    const use_healed = b.option(bool, "healed", "Run exercises from patches/healed") orelse false;
-
     for (exercises) |ex| {
         const base_name = ex.baseName();
         const file_path = std.fs.path.join(b.allocator, &[_][]const u8{
-            if (use_healed) "patches/healed" else "exercises", ex.main_file,
+            "exercises", ex.main_file,
         }) catch unreachable;
         const build_step = b.addExecutable(base_name, file_path);
         build_step.install();
 
-        const verify_step = ZiglingStep.create(b, ex, use_healed);
+        const verify_step = ZiglingStep.create(b, ex);
 
         const key = ex.key();
 
@@ -587,15 +585,13 @@ const ZiglingStep = struct {
     step: Step,
     exercise: Exercise,
     builder: *Builder,
-    use_healed: bool,
 
-    pub fn create(builder: *Builder, exercise: Exercise, use_healed: bool) *@This() {
+    pub fn create(builder: *Builder, exercise: Exercise) *@This() {
         const self = builder.allocator.create(@This()) catch unreachable;
         self.* = .{
             .step = Step.init(.custom, exercise.main_file, builder.allocator, make),
             .exercise = exercise,
             .builder = builder,
-            .use_healed = use_healed,
         };
         return self;
     }
@@ -608,8 +604,11 @@ const ZiglingStep = struct {
             }
 
             print("\n{s}Edit exercises/{s} and run this again.{s}", .{ red_text, self.exercise.main_file, reset_text });
-            print("\n{s}To continue from this zigling, use this command:{s}\n    {s}zig build {s}{s}\n", .{ red_text, reset_text, bold_text, self.exercise.key(), reset_text });
-            std.os.exit(0);
+            print(
+                "\n{s}To continue from this zigling, use this command:{s}\n    {s}zig build {s}{s}\n",
+                .{ red_text, reset_text, bold_text, self.exercise.key(), reset_text },
+            );
+            std.os.exit(1);
         };
     }
 
@@ -704,7 +703,7 @@ const ZiglingStep = struct {
             zig_args.append(@tagName(builder.color)) catch unreachable;
         }
 
-        const zig_file = std.fs.path.join(builder.allocator, &[_][]const u8{ if (self.use_healed) "patches/healed" else "exercises", self.exercise.main_file }) catch unreachable;
+        const zig_file = std.fs.path.join(builder.allocator, &[_][]const u8{ "exercises", self.exercise.main_file }) catch unreachable;
         zig_args.append(builder.pathFromRoot(zig_file)) catch unreachable;
 
         zig_args.append("--cache-dir") catch unreachable;
