@@ -6,7 +6,7 @@ const assert = std.debug.assert;
 const print = std.debug.print;
 
 var MAGIC_GLOBAL_COUNT: usize = 0;
-var TOTAL: usize = 81;
+var TOTAL: usize = 74;
 
 var USE_COLOR = false;
 var RED: []const u8 = "";
@@ -163,8 +163,20 @@ pub fn build(b: *Builder) void {
 
 fn log_grade_fn(_: *Step) anyerror!void {
     const percentage = (@intToFloat(f32, MAGIC_GLOBAL_COUNT) / @intToFloat(f32, TOTAL)) * 100.0;
-    const color = if (((MAGIC_GLOBAL_COUNT / TOTAL) * 100) > 70) GREEN else RED;
-    print("score including async stuff {}/{}\nSCORE {s}{}/{} {d:.2}%{s}", .{ MAGIC_GLOBAL_COUNT, 91, color, MAGIC_GLOBAL_COUNT, TOTAL, percentage, RESET });
+    const color = if (percentage > 70.0) GREEN else RED;
+    print(
+        "score including async and comptime {}/{}\nSCORE {s}{}/{} {d:.2}%{s}",
+        .{
+            MAGIC_GLOBAL_COUNT,
+            91,
+            color,
+            MAGIC_GLOBAL_COUNT,
+            TOTAL,
+            percentage,
+            RESET
+        }
+    );
+
 }
 
 const ZiglingStep = struct {
