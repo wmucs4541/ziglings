@@ -120,7 +120,6 @@ pub fn build(b: *Builder) void {
     }
     var prev_chain_verify = verify_all;
 
-    var count: usize = 0;
     for (exercises) |ex| {
         const base_name = ex.baseName();
         const file_path = std.fs.path.join(b.allocator, &[_][]const u8{
@@ -129,7 +128,7 @@ pub fn build(b: *Builder) void {
         const build_step = b.addExecutable(base_name, file_path);
         build_step.install();
 
-        const verify_step = ZiglingStep.create(b, ex, ci_grade_flag, &count);
+        const verify_step = ZiglingStep.create(b, ex, ci_grade_flag);
 
         const key = ex.key();
 
@@ -155,18 +154,17 @@ pub fn build(b: *Builder) void {
         prev_chain_verify = chain_verify;
     }
 
-     if (ci_grade_flag) {
-        print("SCORE {s}{}/{}{s}", .{GREEN, MAGIC_GLOBAL_COUNT, TOTAL, RESET});
-
+    if (ci_grade_flag) {
         var log_grade = b.allocator.create(Step) catch unreachable;
         log_grade.* = Step.init(.custom, "log grade", b.allocator, log_grade_fn);
-        log_grade.dependOn(verify_all);
+        prev_chain_verify.dependOn(log_grade);
     }
 }
 
 fn log_grade_fn(_: *Step) anyerror!void {
-    print("SCORE {s}{}/{}{s}", .{GREEN, MAGIC_GLOBAL_COUNT, TOTAL, RESET});
-
+    const percentage = (@intToFloat(f32, MAGIC_GLOBAL_COUNT) / @intToFloat(f32, TOTAL)) * 100.0;
+    const color = if (((MAGIC_GLOBAL_COUNT / TOTAL) * 100) > 70) GREEN else RED;
+    print("score including async stuff {}/{}\nSCORE {s}{}/{} {d:.2}%{s}", .{ MAGIC_GLOBAL_COUNT, 91, color, MAGIC_GLOBAL_COUNT, TOTAL, percentage, RESET });
 }
 
 const ZiglingStep = struct {
@@ -175,16 +173,14 @@ const ZiglingStep = struct {
     builder: *Builder,
     /// Is this running in CI for Github classroom?
     ci_grader: bool = false,
-    count: *usize,
 
-    pub fn create(builder: *Builder, exercise: Exercise, ci: bool, count: *usize) *@This() {
+    pub fn create(builder: *Builder, exercise: Exercise, ci: bool) *@This() {
         const self = builder.allocator.create(@This()) catch unreachable;
         self.* = .{
             .step = Step.init(.custom, exercise.main_file, builder.allocator, make),
             .exercise = exercise,
             .builder = builder,
             .ci_grader = ci,
-            .count = count,
         };
         return self;
     }
@@ -198,7 +194,7 @@ const ZiglingStep = struct {
                 return;
             };
 
-            self.count.* += 1;
+            MAGIC_GLOBAL_COUNT += 1;
             return;
         }
 
