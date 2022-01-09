@@ -165,7 +165,7 @@ fn log_grade_fn(_: *Step) anyerror!void {
     const percentage = (@intToFloat(f32, MAGIC_GLOBAL_COUNT) / @intToFloat(f32, TOTAL)) * 100.0;
     const color = if (percentage > 70.0) GREEN else RED;
     print(
-        "score including async and comptime {}/{}\nSCORE {s}{}/{} {d:.2}%{s}",
+        "score including async and comptime {}/{}\nSCORE {s}{}/{} {d:.2}%{s}\n",
         .{
             MAGIC_GLOBAL_COUNT,
             91,
@@ -176,7 +176,9 @@ fn log_grade_fn(_: *Step) anyerror!void {
             RESET
         }
     );
-
+    if (percentage < 100.0) {
+        std.os.exit(1);
+    }
 }
 
 const ZiglingStep = struct {
