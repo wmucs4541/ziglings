@@ -5,7 +5,9 @@ const Step = std.build.Step;
 const assert = std.debug.assert;
 const print = std.debug.print;
 
+/// Students score out of `TOTAL`.
 var MAGIC_GLOBAL_COUNT: usize = 0;
+/// The total number of exercises assinged.
 var TOTAL: usize = 74;
 
 var USE_COLOR = false;
